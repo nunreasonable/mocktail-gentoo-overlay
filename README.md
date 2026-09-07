@@ -24,7 +24,19 @@ third-party mirror on first launch.
 Only `amd64` is supported — the runtime exists to load Android x86-64 shared objects, and
 upstream does not build for anything else.
 
-## Registering the overlay
+## Installing the overlay
+
+The packaging lives on the orphan `gentoo-overlay` branch of this repository.
+The default branch is a mirror of upstream Mocktail and carries no ebuilds, so
+the branch has to be named explicitly either way.
+
+### Clone it yourself
+
+```sh
+git clone -b gentoo-overlay --single-branch \
+  https://github.com/nunreasonable/mocktail-gentoo-overlay.git \
+  /var/db/repos/mocktail-overlay
+```
 
 ```ini
 # /etc/portage/repos.conf/mocktail-overlay.conf
@@ -33,6 +45,30 @@ location = /var/db/repos/mocktail-overlay
 masters = gentoo
 auto-sync = false
 ```
+
+Update it with `git -C /var/db/repos/mocktail-overlay pull`.
+
+### Or let Portage manage it
+
+```ini
+# /etc/portage/repos.conf/mocktail-overlay.conf
+[mocktail-overlay]
+location = /var/db/repos/mocktail-overlay
+masters = gentoo
+auto-sync = yes
+sync-type = git
+sync-uri = https://github.com/nunreasonable/mocktail-gentoo-overlay.git
+sync-git-clone-extra-opts = --branch gentoo-overlay
+```
+
+Then `emaint sync -r mocktail-overlay`. Portage has no `sync-branch` setting and
+its git module clones whatever the default branch is, so
+`sync-git-clone-extra-opts` is what pins the orphan branch; without that line
+Portage clones upstream Mocktail into the repository directory and then rejects
+it as invalid. Later syncs follow the branch the working tree already tracks, so
+the option only matters for the first clone.
+
+### Keywords
 
 The ebuilds are `~amd64`:
 
