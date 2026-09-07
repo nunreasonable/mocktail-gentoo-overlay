@@ -1,31 +1,30 @@
 # mocktail-overlay
 
-Overlay Portage **não oficial** e de terceiros com ebuilds para o
-[Mocktail](https://github.com/komaruworld/mocktail), o runtime de compatibilidade que roda o
-cliente Android x86-64 do Roblox no Linux.
+Third-party, **unofficial** Portage overlay with ebuilds for
+[Mocktail](https://github.com/komaruworld/mocktail), the compatibility runtime that runs the
+Android x86-64 Roblox client on Linux.
 
-Este overlay não tem vínculo com o projeto Mocktail, com a Roblox Corporation nem com a
-VinegarHQ, e não é endossado por nenhum deles. Sou maintainer **dos ebuilds**, não do
-software. Problema de empacotamento é problema daqui — não abra issue no upstream por causa
-dele.
+This overlay is not affiliated with or endorsed by the Mocktail project, the Roblox
+Corporation or VinegarHQ. I maintain **the ebuilds**, not the software. A packaging problem
+is a problem for this repository — do not open an issue upstream over one.
 
-O APK do Roblox não é redistribuído por nenhum destes pacotes; o Mocktail o baixa de um
-espelho de terceiros no primeiro launch.
+The Roblox APK is not redistributed by any of these packages; Mocktail downloads it from a
+third-party mirror on first launch.
 
-## Pacotes
+## Packages
 
-| Pacote | O que é |
+| Package | What it is |
 |---|---|
-| `app-emulation/mocktail-1.0.3` | Build a partir da fonte, da tag `1.0.3`. É o que você quer. |
-| `app-emulation/mocktail-9999` | Ebuild live, segue o `main` via `git-r3`. |
-| `app-emulation/mocktail-bin-1.0.3` | Binário pré-compilado do release upstream (linkado no Arch), instalado em `/opt/mocktail`. Fallback. |
+| `app-emulation/mocktail-1.0.3` | Source build from the `1.0.3` tag. This is the one you want. |
+| `app-emulation/mocktail-9999` | Live ebuild, follows `main` via `git-r3`. |
+| `app-emulation/mocktail-bin-1.0.3` | Prebuilt binary from the upstream release (linked on Arch), installed into `/opt/mocktail`. Fallback. |
 
-`mocktail` e `mocktail-bin` se bloqueiam mutuamente: instale um ou outro.
+`mocktail` and `mocktail-bin` block each other: install one or the other.
 
-Só `amd64` é suportado — o runtime existe para carregar objetos compartilhados Android
-x86-64, e o upstream não constrói para mais nada.
+Only `amd64` is supported — the runtime exists to load Android x86-64 shared objects, and
+upstream does not build for anything else.
 
-## Registrando o overlay
+## Registering the overlay
 
 ```ini
 # /etc/portage/repos.conf/mocktail-overlay.conf
@@ -35,7 +34,7 @@ masters = gentoo
 auto-sync = false
 ```
 
-Os ebuilds são `~amd64`:
+The ebuilds are `~amd64`:
 
 ```
 # /etc/portage/package.accept_keywords/mocktail
@@ -43,10 +42,10 @@ app-emulation/mocktail     ~amd64
 app-emulation/mocktail-bin ~amd64
 ```
 
-## USE flags necessárias nas dependências
+## USE flags required on the dependencies
 
-O CMake do Mocktail exige `minizip.pc` (que no Gentoo só sai com `USE=minizip` no zlib) e
-`webkitgtk-6.0`, cujo `REQUIRED_USE` é `any-of ( aqua wayland X )`:
+Mocktail's CMake requires `minizip.pc` (which on Gentoo only comes from `USE=minizip` on zlib)
+and `webkitgtk-6.0`, whose `REQUIRED_USE` is `any-of ( aqua wayland X )`:
 
 ```
 # /etc/portage/package.use/mocktail
@@ -57,38 +56,41 @@ media-libs/harfbuzz         icu
 media-libs/gst-plugins-base opengl
 ```
 
-As duas últimas linhas são exigidas pelas dependências do `webkit-gtk:6`, não pelo Mocktail.
-Num perfil desktop com `wayland` global, só a linha do `zlib` costuma ser necessária.
+The last two lines are required by `webkit-gtk:6`'s own dependencies, not by Mocktail. On a
+desktop profile with a global `wayland`, usually only the `zlib` line is needed.
 
-## Instalando
+## Installing
 
 ```sh
 emerge -av app-emulation/mocktail
 ```
 
-Prepare-se: puxa `net-libs/webkit-gtk:6`, que é build longo.
+Be warned: it pulls in `net-libs/webkit-gtk:6`, which is a long build.
 
-## Como os ebuilds divergem do upstream
+## How the ebuilds diverge from upstream
 
-Duas mudanças, ambas como patch versionado em `files/`, nenhuma como `sed` inline:
+Two changes, both as versioned patches in `files/`, neither as an inline `sed`:
 
-- **`mocktail-system-vulkan-headers.patch`** — `third_party/Vulkan-Headers` é submódulo git e
-  vem vazio no tarball. Trocamos o `add_subdirectory()` por
-  `find_package(VulkanHeaders CONFIG REQUIRED)`, usando `dev-util/vulkan-headers`, que exporta
-  o mesmo alvo `Vulkan::Headers`.
-- **`mocktail-1.0.3-bionic-abi-exports-no-lto.patch`** — backport do fix que o upstream fez
-  depois da tag 1.0.3: `src/compat/bionic_abi_exports.cc` redefine de propósito os `__*_chk`
-  da glibc, e sem `-fno-lto -fno-builtin` o GCC pode dobrar a chamada de volta no próprio
-  wrapper e virar recursão infinita. Não é aplicado no `9999`, que já traz o fix.
+- **`mocktail-system-vulkan-headers.patch`** — `third_party/Vulkan-Headers` is a git submodule
+  and comes up empty in the tarball. The `add_subdirectory()` is replaced with
+  `find_package(VulkanHeaders CONFIG REQUIRED)`, using `dev-util/vulkan-headers`, which exports
+  the same `Vulkan::Headers` target.
+- **`mocktail-1.0.3-bionic-abi-exports-no-lto.patch`** — a backport of the fix upstream made
+  after the 1.0.3 tag: `src/compat/bionic_abi_exports.cc` deliberately redefines glibc's
+  `__*_chk` functions, and without `-fno-lto -fno-builtin` GCC may fold the call back into the
+  wrapper itself and turn it into infinite recursion. Not applied to `9999`, which already
+  carries the fix.
 
-Além disso o `src_configure` desliga o helper de socket do FreeBSD
-(`MOCKTAIL_BUILD_FREEBSD_SOCKET_HELPER=OFF`, que só serve ao Linuxulator e arrastaria
-`llvm-core/lld`), desliga o `BUILD_TESTING` (que faria `FetchContent` do googletest pela rede)
-e **não** passa `-DCMAKE_INSTALL_LIBDIR=lib` como o PKGBUILD do Arch — no Gentoo isso poria
-ELF de 64 bits em `/usr/lib`, que é falha de QA sob `FEATURES=multilib-strict`.
+Beyond that, `src_configure` turns off the FreeBSD socket helper
+(`MOCKTAIL_BUILD_FREEBSD_SOCKET_HELPER=OFF`, which only serves the Linuxulator and would drag
+in `llvm-core/lld`), turns off `BUILD_TESTING` (which would `FetchContent` googletest over the
+network) and does **not** pass `-DCMAKE_INSTALL_LIBDIR=lib` the way the Arch PKGBUILD does — on
+Gentoo that would put 64-bit ELF objects in `/usr/lib`, a QA failure under
+`FEATURES=multilib-strict`.
 
-## Licença
+## License
 
-Os ebuilds seguem a GPL-2, como é praxe no Portage. O Mocktail em si é Apache-2.0, com
-`third_party/` trazendo BSD (ANGLE, bionic/ARM), MIT (mcpelauncher-linker) e
-GPL-2-with-classpath-exception (headers JNI do OpenJDK) — daí o campo `LICENSE` dos ebuilds.
+The ebuilds are GPL-2, as is customary in Portage. Mocktail itself is Apache-2.0, with
+`third_party/` bringing in BSD (ANGLE, bionic/ARM), MIT (mcpelauncher-linker) and
+GPL-2-with-classpath-exception (OpenJDK JNI headers) — hence the `LICENSE` field in the
+ebuilds.
