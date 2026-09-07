@@ -19,10 +19,10 @@
 		The Roblox client APK is neither distributed nor redistributed by this
 		package; Mocktail downloads it from a third-party mirror on first launch.
 
-		This ebuild lives in an unofficial third-party overlay. It is not
-		endorsed by, affiliated with, or supported by the Mocktail project, the
-		Roblox Corporation, or VinegarHQ. Problems with the packaging are
-		problems with this overlay and should not be reported upstream.
+		This packaging is maintained independently of upstream. It is not
+		endorsed by or affiliated with the Mocktail project, the Roblox
+		Corporation, or VinegarHQ, and packaging problems should be reported to
+		the ebuild maintainer rather than upstream.
 	</longdescription>
 	<upstream>
 		<remote-id type="github">komaruworld/mocktail</remote-id>
