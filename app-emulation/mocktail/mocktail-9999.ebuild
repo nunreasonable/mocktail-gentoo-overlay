@@ -54,6 +54,13 @@ RDEPEND="
 	media-libs/vulkan-loader
 	x11-themes/hicolor-icon-theme
 	!app-emulation/mocktail-bin
+	|| (
+		media-libs/libsdl3[pipewire]
+		media-libs/libsdl3[pulseaudio]
+		media-libs/libsdl3[alsa]
+		media-libs/libsdl3[jack]
+		media-libs/libsdl3[sndio]
+	)
 "
 BDEPEND="virtual/pkgconfig"
 

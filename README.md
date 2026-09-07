@@ -86,14 +86,23 @@ and `webkitgtk-6.0`, whose `REQUIRED_USE` is `any-of ( aqua wayland X )`:
 ```
 # /etc/portage/package.use/mocktail
 sys-libs/zlib               minizip
-media-libs/libsdl3          vulkan opengl wayland
+media-libs/libsdl3          vulkan opengl wayland pipewire
 net-libs/webkit-gtk:6       wayland
 media-libs/harfbuzz         icu
 media-libs/gst-plugins-base opengl
 ```
 
 The last two lines are required by `webkit-gtk:6`'s own dependencies, not by Mocktail. On a
-desktop profile with a global `wayland`, usually only the `zlib` line is needed.
+desktop profile with a global `wayland`, usually only the `zlib` and `libsdl3` lines are
+needed.
+
+`libsdl3` needs at least one audio backend, and the `default/linux/amd64/23.0` profile
+enables none of them. With none compiled in, `SDL_InitSubSystem(SDL_INIT_AUDIO)` fails with
+"No available audio device", which Mocktail treats as fatal — on launch and also inside the
+canary that validates a freshly downloaded payload, so the failure surfaces as "could not
+update or verify the Roblox installation". `app-emulation/mocktail` therefore requires one
+of `pipewire`, `pulseaudio`, `alsa`, `jack` or `sndio`; pick the one matching your sound
+server. `pipewire` is what the example above assumes.
 
 ## Installing
 
