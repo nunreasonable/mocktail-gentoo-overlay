@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>rafaelpasquarella@gmail.com</email>
+		<name>nunreasonable</name>
+		<description>Maintainer of this ebuild only, not of Mocktail itself.</description>
+	</maintainer>
+	<longdescription lang="en">
+		Mocktail is a compatibility runtime that runs the Android x86-64 Roblox
+		client on Linux. It loads the Android shared objects through a vendored
+		Bionic linker inside an ordinary glibc process, bridging the Bionic ABI,
+		EGL/Vulkan WSI, OpenSL ES audio and the JNI surface the client expects.
+
+		The Roblox client APK is neither distributed nor redistributed by this
+		package; Mocktail downloads it from a third-party mirror on first launch.
+
+		This packaging is maintained independently of upstream. It is not
+		endorsed by or affiliated with the Mocktail project, the Roblox
+		Corporation, or VinegarHQ, and packaging problems should be reported to
+		the ebuild maintainer rather than upstream.
+	</longdescription>
+	<upstream>
+		<remote-id type="github">komaruworld/mocktail</remote-id>
+	</upstream>
+</pkgmetadata>

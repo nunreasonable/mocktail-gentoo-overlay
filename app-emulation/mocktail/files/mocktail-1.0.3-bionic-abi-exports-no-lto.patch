@@ -1,0 +1,36 @@
+Keep the Bionic FORTIFY bridge opaque to LTO and to builtin folding.
+
+Backport of the upstream fix that landed after the 1.0.3 tag.
+
+src/compat/bionic_abi_exports.cc deliberately defines __memcpy_chk, __strcpy_chk,
+__vsnprintf_chk and friends, which collide with glibc's own entry points.  Under
+whole-program LTO GCC can fold a fortified host call back into Mocktail's own
+wrapper, and the resulting tail recursion never terminates.  -fno-builtin matters
+even without LTO, because Gentoo's GCC turns on _FORTIFY_SOURCE at -O2 and would
+otherwise be free to rewrite the wrapper's plain memcpy() call back into
+__memcpy_chk().
+
+Not needed by mocktail-9999, which already carries this upstream.
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -525,6 +525,19 @@
+   PRIVATE src
+ )
+ mocktail_apply_compile_options(mocktail_bionic_abi_exports)
++# These exported Bionic FORTIFY symbols intentionally overlap glibc's
++# __*_chk entry points.  When the bridge is visible to whole-program LTO,
++# GCC can fold a fortified host call back into its own compatibility wrapper
++# and turn the resulting tail recursion into an infinite loop.  Keep this
++# translation unit opaque to interprocedural optimization and make its calls
++# to the host C library explicit external calls.
++if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
++  set_property(SOURCE src/compat/bionic_abi_exports.cc APPEND PROPERTY
++    COMPILE_OPTIONS
++      -fno-lto
++      -fno-builtin
++  )
++endif()
+ target_link_libraries(mocktail_bionic_abi_exports PRIVATE
+   mocktail_bionic_stdio_runtime
+   mocktail_window
