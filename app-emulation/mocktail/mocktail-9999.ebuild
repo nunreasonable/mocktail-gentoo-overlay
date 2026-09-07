@@ -14,10 +14,13 @@ EGIT_REPO_URI="https://github.com/komaruworld/mocktail.git"
 # still fetched instead of silently going missing.
 EGIT_SUBMODULES=( '*' '-third_party/libjnivm' '-third_party/Vulkan-Headers' )
 
-# See mocktail-1.0.3.ebuild for the per-component breakdown.
+# See mocktail-1.0.3-r2.ebuild for the per-component breakdown.
 LICENSE="Apache-2.0 BSD GPL-2-with-classpath-exception MIT"
 SLOT="0"
 KEYWORDS=""
+# git-r3 fetches in src_unpack, which FEATURES=network-sandbox blocks unless
+# the ebuild declares itself live.
+PROPERTIES="live"
 
 # BUILD_TESTING=ON makes CMake FetchContent googletest from the network at
 # configure time, which the Portage network sandbox forbids.
@@ -94,7 +97,7 @@ src_configure() {
 		-DMOCKTAIL_DEFAULT_SIGNING_TRUST_MANIFEST="${EPREFIX}/usr/share/mocktail/metadata/roblox_signing_certificates.json"
 	)
 
-	# No -DCMAKE_INSTALL_LIBDIR; see mocktail-1.0.3.ebuild for why.
+	# No -DCMAKE_INSTALL_LIBDIR; see mocktail-1.0.3-r2.ebuild for why.
 	cmake_src_configure
 }
 
