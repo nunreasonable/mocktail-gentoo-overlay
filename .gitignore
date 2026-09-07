@@ -1,0 +1,18 @@
+# Derivado do .gitignore da GURU (/var/db/repos/guru/.gitignore), para que este
+# overlay siga a mesma convencao do repo para onde o app-emulation/mocktail vai.
+*.log
+*.swp
+.*.kate-swp
+*~
+,*
+.idea/
+.vs/
+.vscode/
+.~lock.*
+/distfiles/
+/local/
+/packages/
+/tags
+
+# Gerado pelo `egencache`/`pkgcheck`, nao versionado (a GURU tambem ignora).
+/metadata/md5-cache
