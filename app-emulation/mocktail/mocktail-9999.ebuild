@@ -63,6 +63,7 @@ BDEPEND="virtual/pkgconfig"
 # needs regenerating -- that is expected churn for a live ebuild.
 PATCHES=(
 	"${FILESDIR}"/mocktail-system-vulkan-headers.patch
+	"${FILESDIR}"/mocktail-install-libdir.patch
 )
 
 src_configure() {

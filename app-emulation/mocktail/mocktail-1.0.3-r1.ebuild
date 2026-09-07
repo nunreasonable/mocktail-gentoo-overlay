@@ -72,6 +72,7 @@ BDEPEND="virtual/pkgconfig"
 
 PATCHES=(
 	"${FILESDIR}"/mocktail-system-vulkan-headers.patch
+	"${FILESDIR}"/mocktail-install-libdir.patch
 	"${FILESDIR}"/mocktail-1.0.3-bionic-abi-exports-no-lto.patch
 )
 
@@ -114,7 +115,9 @@ src_configure() {
 	# 64-bit ELF under /usr/lib.  cmake.eclass already passes $(get_libdir),
 	# and both the executable's INSTALL_RPATH and the compiled-in
 	# MOCKTAIL_INSTALL_LIBDIR derive from that same variable, so they stay
-	# consistent with wherever the libraries actually land.
+	# consistent with wherever the libraries actually land.  Two lookups
+	# spelled that libdir as a literal "lib" and needed the install-libdir
+	# patch above before this held.
 	cmake_src_configure
 }
 

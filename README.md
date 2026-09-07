@@ -69,12 +69,20 @@ Be warned: it pulls in `net-libs/webkit-gtk:6`, which is a long build.
 
 ## How the ebuilds diverge from upstream
 
-Two changes, both as versioned patches in `files/`, neither as an inline `sed`:
+Three changes, all as versioned patches in `files/`, none as an inline `sed`:
 
 - **`mocktail-system-vulkan-headers.patch`** — `third_party/Vulkan-Headers` is a git submodule
   and comes up empty in the tarball. The `add_subdirectory()` is replaced with
   `find_package(VulkanHeaders CONFIG REQUIRED)`, using `dev-util/vulkan-headers`, which exports
   the same `Vulkan::Headers` target.
+- **`mocktail-install-libdir.patch`** — two of the runtime's helper lookups spell
+  the install libdir as a literal `lib`. On Gentoo the helpers land in `lib64`, so
+  `mocktail_updater` is never found: the launch policy exports
+  `MOCKTAIL_UPDATE_HELPER` pointing at a path that does not exist, that value then
+  wins over the fallback search, the payload update preflight is skipped, and
+  startup dies on a missing `rbx_bin/libroblox.so`. The patch routes both lookups
+  through the `MOCKTAIL_INSTALL_LIBDIR` macro that upstream already derives from
+  `CMAKE_INSTALL_LIBDIR` and uses in two other translation units.
 - **`mocktail-1.0.3-bionic-abi-exports-no-lto.patch`** — a backport of the fix upstream made
   after the 1.0.3 tag: `src/compat/bionic_abi_exports.cc` deliberately redefines glibc's
   `__*_chk` functions, and without `-fno-lto -fno-builtin` GCC may fold the call back into the
