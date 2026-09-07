@@ -30,7 +30,7 @@ x86-64, e o upstream não constrói para mais nada.
 ```ini
 # /etc/portage/repos.conf/mocktail-overlay.conf
 [mocktail-overlay]
-location = /home/daeese/overlays/mocktail
+location = /var/db/repos/mocktail-overlay
 masters = gentoo
 auto-sync = false
 ```
