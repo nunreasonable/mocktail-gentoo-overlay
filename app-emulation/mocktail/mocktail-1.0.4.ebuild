@@ -31,12 +31,14 @@ RESTRICT="test"
 # Probed by CMakeLists.txt, cmake/Mocktail*.cmake and stubs/CMakeLists.txt:
 #   find_package      CURL, OpenSSL, SDL3 3.4, SDL3_ttf, nlohmann_json,
 #                     VulkanHeaders (after our patch)
-#   pkg_check_modules yaml-0.1, minizip (virtual/minizip), capstone, gtk4,
-#                     libadwaita-1>=1.6, webkitgtk-6.0, libelf, libutf8proc,
-#                     fontconfig, libplacebo
+#   pkg_check_modules yaml-0.1, minizip (virtual/minizip), capstone, gio-2.0,
+#                     gtk4, libadwaita-1>=1.6, webkitgtk-6.0, libelf,
+#                     libutf8proc, fontconfig, libplacebo
 #   find_path         EGL/egl.h
+# gio-2.0 is new in 1.0.4, for src/runtime/system_proxy.cc.
 COMMON_DEPEND="
 	>=dev-libs/capstone-5:=
+	dev-libs/glib:2
 	dev-libs/libutf8proc:=
 	dev-libs/libyaml
 	dev-libs/openssl:=
@@ -80,19 +82,18 @@ BDEPEND="virtual/pkgconfig"
 PATCHES=(
 	"${FILESDIR}"/mocktail-system-vulkan-headers.patch
 	"${FILESDIR}"/mocktail-install-libdir.patch
-	"${FILESDIR}"/mocktail-1.0.3-bionic-abi-exports-no-lto.patch
 )
 
 src_configure() {
-	# src/compat/bionic_abi_exports.cc redefines glibc's __*_chk entry points
-	# on purpose.  The backported upstream patch above keeps that one
-	# translation unit out of LTO and out of builtin folding; filter-lto
-	# covers its siblings -- bionic_stdio_runtime.cc, libc_shim.cc and the
-	# vendored bionic linker interpose glibc symbols the same way and upstream
-	# has not guarded them.  A no-op when LTO is not in CFLAGS to begin with.
+	# Upstream guards only src/compat/bionic_abi_exports.cc against LTO and
+	# builtin folding -- the -fno-lto/-fno-builtin block 1.0.3 needed as a
+	# backport is in the tree as of this tag.  bionic_stdio_runtime.cc,
+	# libc_shim.cc and the vendored bionic linker interpose glibc symbols in
+	# exactly the same way and are not guarded, so the filter stays.  A no-op
+	# when LTO is not in CFLAGS to begin with.
 	#
 	# _FORTIFY_SOURCE is deliberately left alone: upstream ships this exact
-	# source to Arch with FORTIFY enabled, and the patch already covers the
+	# source to Arch with FORTIFY enabled, and its own guard already covers the
 	# only translation unit that reimplements the fortified entry points.
 	filter-lto
 

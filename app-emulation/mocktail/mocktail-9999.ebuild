@@ -14,7 +14,7 @@ EGIT_REPO_URI="https://github.com/komaruworld/mocktail.git"
 # still fetched instead of silently going missing.
 EGIT_SUBMODULES=( '*' '-third_party/libjnivm' '-third_party/Vulkan-Headers' )
 
-# See mocktail-1.0.3-r2.ebuild for the per-component breakdown.
+# See mocktail-1.0.4.ebuild for the per-component breakdown.
 LICENSE="Apache-2.0 BSD GPL-2-with-classpath-exception MIT"
 SLOT="0"
 KEYWORDS=""
@@ -26,8 +26,7 @@ PROPERTIES="live"
 # configure time, which the Portage network sandbox forbids.
 RESTRICT="test"
 
-# Same probe list as 1.0.3, plus gio-2.0: pkg_check_modules(GIO ...) was added
-# after the 1.0.3 tag, for src/runtime/system_proxy.cc.
+# Same probe list as 1.0.4.
 COMMON_DEPEND="
 	>=dev-libs/capstone-5:=
 	dev-libs/glib:2
@@ -67,10 +66,9 @@ RDEPEND="
 "
 BDEPEND="virtual/pkgconfig"
 
-# No bionic-abi-exports patch here: the -fno-lto/-fno-builtin guard it
-# backports is already in the upstream tree.  If this patch ever stops
-# applying, upstream has restructured the Vulkan-Headers block and the patch
-# needs regenerating -- that is expected churn for a live ebuild.
+# Same two patches as 1.0.4.  If either one stops applying, upstream has
+# restructured the block it touches and the patch needs regenerating -- that is
+# expected churn for a live ebuild.
 PATCHES=(
 	"${FILESDIR}"/mocktail-system-vulkan-headers.patch
 	"${FILESDIR}"/mocktail-install-libdir.patch
@@ -97,7 +95,7 @@ src_configure() {
 		-DMOCKTAIL_DEFAULT_SIGNING_TRUST_MANIFEST="${EPREFIX}/usr/share/mocktail/metadata/roblox_signing_certificates.json"
 	)
 
-	# No -DCMAKE_INSTALL_LIBDIR; see mocktail-1.0.3-r2.ebuild for why.
+	# No -DCMAKE_INSTALL_LIBDIR; see mocktail-1.0.4.ebuild for why.
 	cmake_src_configure
 }
 
