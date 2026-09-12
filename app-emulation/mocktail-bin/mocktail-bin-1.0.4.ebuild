@@ -5,13 +5,20 @@ EAPI=8
 
 inherit unpacker xdg
 
-# Upstream's release assets carry the Arch package release in the file name.
-MY_PR="2"
-
 DESCRIPTION="Runs the Android x86-64 Roblox client on Linux (prebuilt binaries)"
 HOMEPAGE="https://github.com/komaruworld/mocktail"
-SRC_URI="https://github.com/komaruworld/mocktail/releases/download/${PV}/mocktail-${PV}-${MY_PR}-x86_64.pkg.tar.zst"
+# There is no workflow in the tree that names the tagged release assets, and
+# upstream does not name them consistently: the 1.0.3 asset carried the Arch
+# package release (mocktail-1.0.3-2-x86_64.pkg.tar.zst) and this one does not.
+# Check the actual asset name on every bump instead of deriving it.
+SRC_URI="https://github.com/komaruworld/mocktail/releases/download/${PV}/mocktail-${PV}-x86_64.pkg.tar.zst"
 S="${WORKDIR}"
+
+# The archive's own .PKGINFO still says pkgver=1.0.3-2 and the binaries report
+# 1.0.3, because upstream never bumped packaging/arch/PKGBUILD or
+# project(Mocktail VERSION ...) at the 1.0.4 tag.  It really is the 1.0.4 build:
+# it was produced on 2026-09-11 from that tree and ships the Roblox 2.736.1408
+# compatibility profile that 1.0.3 does not have.
 
 # See app-emulation/mocktail for the per-component breakdown.
 LICENSE="Apache-2.0 BSD GPL-2-with-classpath-exception MIT"
