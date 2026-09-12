@@ -15,9 +15,9 @@ third-party mirror on first launch.
 
 | Package | What it is |
 |---|---|
-| `app-emulation/mocktail-1.0.3` | Source build from the `1.0.3` tag. This is the one you want. |
+| `app-emulation/mocktail-1.0.4` | Source build from the `1.0.4` tag. This is the one you want. |
 | `app-emulation/mocktail-9999` | Live ebuild, follows `main` via `git-r3`. |
-| `app-emulation/mocktail-bin-1.0.3` | Prebuilt binary from the upstream release (linked on Arch), installed into `/opt/mocktail`. Fallback. |
+| `app-emulation/mocktail-bin-1.0.4` | Prebuilt binary from the upstream release (linked on Arch), installed into `/opt/mocktail`. Fallback. |
 
 `mocktail` and `mocktail-bin` block each other: install one or the other.
 
@@ -114,7 +114,7 @@ Be warned: it pulls in `net-libs/webkit-gtk:6`, which is a long build.
 
 ## How the ebuilds diverge from upstream
 
-Three changes, all as versioned patches in `files/`, none as an inline `sed`:
+Two changes, both as versioned patches in `files/`, neither as an inline `sed`:
 
 - **`mocktail-system-vulkan-headers.patch`** — `third_party/Vulkan-Headers` is a git submodule
   and comes up empty in the tarball. The `add_subdirectory()` is replaced with
@@ -128,13 +128,13 @@ Three changes, all as versioned patches in `files/`, none as an inline `sed`:
   startup dies on a missing `rbx_bin/libroblox.so`. The patch routes both lookups
   through the `MOCKTAIL_INSTALL_LIBDIR` macro that upstream already derives from
   `CMAKE_INSTALL_LIBDIR` and uses in two other translation units.
-- **`mocktail-1.0.3-bionic-abi-exports-no-lto.patch`** — a backport of the fix upstream made
-  after the 1.0.3 tag: `src/compat/bionic_abi_exports.cc` deliberately redefines glibc's
-  `__*_chk` functions, and without `-fno-lto -fno-builtin` GCC may fold the call back into the
-  wrapper itself and turn it into infinite recursion. Not applied to `9999`, which already
-  carries the fix.
 
-Beyond that, `src_configure` turns off the FreeBSD socket helper
+Beyond that, `src_configure` calls `filter-lto`. `src/compat/bionic_abi_exports.cc`
+deliberately redefines glibc's `__*_chk` functions, and without `-fno-lto -fno-builtin` GCC
+may fold such a call back into the wrapper itself and turn it into infinite recursion.
+Upstream guards that one translation unit, but `bionic_stdio_runtime.cc`, `libc_shim.cc` and
+the vendored bionic linker interpose glibc symbols the same way and are not guarded, so the
+filter covers them. It also turns off the FreeBSD socket helper
 (`MOCKTAIL_BUILD_FREEBSD_SOCKET_HELPER=OFF`, which only serves the Linuxulator and would drag
 in `llvm-core/lld`), turns off `BUILD_TESTING` (which would `FetchContent` googletest over the
 network) and does **not** pass `-DCMAKE_INSTALL_LIBDIR=lib` the way the Arch PKGBUILD does — on
