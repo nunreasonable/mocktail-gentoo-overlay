@@ -26,7 +26,10 @@ PROPERTIES="live"
 # configure time, which the Portage network sandbox forbids.
 RESTRICT="test"
 
-# Same probe list as 1.0.4.
+# Same probe list as 1.0.4, plus find_path(GLES3/gl3.h), which upstream added
+# after the tag in cmake/MocktailPlatformGraphics.cmake for
+# src/graphics/gles_text_overlay_compositor.cc.  That header comes from
+# media-libs/libglvnd, already pulled in below for EGL, so nothing changes here.
 COMMON_DEPEND="
 	>=dev-libs/capstone-5:=
 	dev-libs/glib:2
