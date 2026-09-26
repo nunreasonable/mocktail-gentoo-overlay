@@ -21,8 +21,11 @@ third-party mirror on first launch.
 
 `mocktail` and `mocktail-bin` block each other: install one or the other.
 
-Only `amd64` is supported — the runtime exists to load Android x86-64 shared objects, and
-upstream does not build for anything else.
+The releases are `amd64` only: the runtime loads Android shared objects of the host's own
+architecture, and up to `1.0.4` upstream built for x86-64 alone. Upstream `main` has since
+gained `arm64` support (it then runs the Android `arm64-v8a` client), so `mocktail-9999`
+builds there too, but no release carries it yet and this overlay has not tested it — the
+`1.0.4` ebuilds stay `-* ~amd64`.
 
 ## Installing the overlay
 
