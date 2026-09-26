@@ -5,7 +5,7 @@ EAPI=8
 
 inherit cmake flag-o-matic git-r3 optfeature xdg
 
-DESCRIPTION="Compatibility runtime that runs the Android x86-64 Roblox client on Linux"
+DESCRIPTION="Compatibility runtime that runs the Android Roblox client on Linux"
 HOMEPAGE="https://github.com/komaruworld/mocktail"
 EGIT_REPO_URI="https://github.com/komaruworld/mocktail.git"
 # third_party/libjnivm is replaced by MOCKTAIL_ENABLE_UPSTREAM_JNIVM=OFF and
@@ -17,6 +17,9 @@ EGIT_SUBMODULES=( '*' '-third_party/libjnivm' '-third_party/Vulkan-Headers' )
 # See mocktail-1.0.4.ebuild for the per-component breakdown.
 LICENSE="Apache-2.0 BSD GPL-2-with-classpath-exception MIT"
 SLOT="0"
+# main also builds on arm64 since upstream #152, against the Android arm64-v8a
+# client; include/compat/guest_abi.h picks the guest ABI from the host at
+# compile time.  Live ebuilds carry no keywords either way.
 KEYWORDS=""
 # git-r3 fetches in src_unpack, which FEATURES=network-sandbox blocks unless
 # the ebuild declares itself live.
@@ -26,10 +29,11 @@ PROPERTIES="live"
 # configure time, which the Portage network sandbox forbids.
 RESTRICT="test"
 
-# Same probe list as 1.0.4, plus find_path(GLES3/gl3.h), which upstream added
-# after the tag in cmake/MocktailPlatformGraphics.cmake for
-# src/graphics/gles_text_overlay_compositor.cc.  That header comes from
-# media-libs/libglvnd, already pulled in below for EGL, so nothing changes here.
+# Same probe list as 1.0.4, plus what upstream added after the tag:
+#   find_path         GLES3/gl3.h, for the new GLES text overlay compositor;
+#                     media-libs/libglvnd provides it, already needed for EGL.
+#   pkg_check_modules libpng, linked into the libvulkan.so shim for its ETC2
+#                     decoder and texture overrides.
 COMMON_DEPEND="
 	>=dev-libs/capstone-5:=
 	dev-libs/glib:2
@@ -41,6 +45,7 @@ COMMON_DEPEND="
 	media-libs/fontconfig
 	media-libs/libglvnd
 	media-libs/libplacebo:=
+	media-libs/libpng:=
 	>=media-libs/libsdl3-3.4[vulkan]
 	media-libs/sdl3-ttf
 	net-libs/webkit-gtk:6=
@@ -111,5 +116,6 @@ pkg_postinst() {
 	elog "part of this package. It is downloaded from a third-party mirror the"
 	elog "first time you launch mocktail."
 	elog
-	elog "Only the Android x86-64 Roblox client is supported."
+	elog "The Roblox client ABI follows the host: x86_64 on amd64, arm64-v8a"
+	elog "on arm64."
 }

@@ -7,10 +7,12 @@
 		<description>Maintainer of this ebuild only, not of Mocktail itself.</description>
 	</maintainer>
 	<longdescription lang="en">
-		Mocktail is a compatibility runtime that runs the Android x86-64 Roblox
-		client on Linux. It loads the Android shared objects through a vendored
-		Bionic linker inside an ordinary glibc process, bridging the Bionic ABI,
-		EGL/Vulkan WSI, OpenSL ES audio and the JNI surface the client expects.
+		Mocktail is a compatibility runtime that runs the Android Roblox client
+		on Linux: the x86-64 client on amd64 and, from the live ebuild onwards,
+		the arm64-v8a client on arm64. It loads the Android shared objects
+		through a vendored Bionic linker inside an ordinary glibc process,
+		bridging the Bionic ABI, EGL/Vulkan WSI, OpenSL ES audio and the JNI
+		surface the client expects.
 
 		The Roblox client APK is neither distributed nor redistributed by this
 		package; Mocktail downloads it from a third-party mirror on first launch.
