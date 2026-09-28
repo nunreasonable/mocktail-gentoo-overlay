@@ -15,7 +15,7 @@ third-party mirror on first launch.
 
 | Package | What it is |
 |---|---|
-| `app-emulation/mocktail-1.0.4` | Source build from the `1.0.4` tag. This is the one you want. |
+| `app-emulation/mocktail-1.0.4-r1` | Source build from the `1.0.4` tag. This is the one you want. |
 | `app-emulation/mocktail-9999` | Live ebuild, follows `main` via `git-r3`. |
 | `app-emulation/mocktail-bin-1.0.4` | Prebuilt binary from the upstream release (linked on Arch), installed into `/opt/mocktail`. Fallback. |
 

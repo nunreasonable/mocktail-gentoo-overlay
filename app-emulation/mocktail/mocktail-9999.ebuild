@@ -14,7 +14,7 @@ EGIT_REPO_URI="https://github.com/komaruworld/mocktail.git"
 # still fetched instead of silently going missing.
 EGIT_SUBMODULES=( '*' '-third_party/libjnivm' '-third_party/Vulkan-Headers' )
 
-# See mocktail-1.0.4.ebuild for the per-component breakdown.
+# See mocktail-1.0.4-r1.ebuild for the per-component breakdown.
 LICENSE="Apache-2.0 BSD GPL-2-with-classpath-exception MIT"
 SLOT="0"
 # main also builds on arm64 since upstream #152, against the Android arm64-v8a
@@ -34,8 +34,10 @@ RESTRICT="test"
 #                     media-libs/libglvnd provides it, already needed for EGL.
 #   pkg_check_modules libpng, linked into the libvulkan.so shim for its ETC2
 #                     decoder and texture overrides.
+# capstone stays on the 5 series for the runtime cs_version() check; see
+# mocktail-1.0.4-r1.ebuild.
 COMMON_DEPEND="
-	>=dev-libs/capstone-5:=
+	=dev-libs/capstone-5*:=
 	dev-libs/glib:2
 	dev-libs/libutf8proc:=
 	dev-libs/libyaml
@@ -103,7 +105,7 @@ src_configure() {
 		-DMOCKTAIL_DEFAULT_SIGNING_TRUST_MANIFEST="${EPREFIX}/usr/share/mocktail/metadata/roblox_signing_certificates.json"
 	)
 
-	# No -DCMAKE_INSTALL_LIBDIR; see mocktail-1.0.4.ebuild for why.
+	# No -DCMAKE_INSTALL_LIBDIR; see mocktail-1.0.4-r1.ebuild for why.
 	cmake_src_configure
 }
 

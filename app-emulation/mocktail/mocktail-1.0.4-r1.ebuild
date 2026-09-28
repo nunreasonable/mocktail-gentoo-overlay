@@ -36,8 +36,15 @@ RESTRICT="test"
 #                     libutf8proc, fontconfig, libplacebo
 #   find_path         EGL/egl.h
 # gio-2.0 is new in 1.0.4, for src/runtime/system_proxy.cc.
+#
+# capstone is pinned to the 5 series.  The pkg-config probe takes any version,
+# but src/update/host_abi_deriver.cc refuses to open the disassembler unless
+# cs_version() reports major 5, and the updater needs it to derive the
+# compatibility profile of each new Roblox client.  Built against the 6.0
+# alphas the package compiles and starts, then fails the first time Roblox
+# updates.
 COMMON_DEPEND="
-	>=dev-libs/capstone-5:=
+	=dev-libs/capstone-5*:=
 	dev-libs/glib:2
 	dev-libs/libutf8proc:=
 	dev-libs/libyaml
