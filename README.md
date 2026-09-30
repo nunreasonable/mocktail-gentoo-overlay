@@ -15,17 +15,18 @@ third-party mirror on first launch.
 
 | Package | What it is |
 |---|---|
-| `app-emulation/mocktail-1.0.4-r1` | Source build from the `1.0.4` tag. This is the one you want. |
+| `app-emulation/mocktail-1.0.4_p20260930` | Source build from upstream `main` at `b37497d`, for the fixes made after `1.0.4` (Roblox 2.738 support, crash, text rendering and input fixes). This is the one you want. |
+| `app-emulation/mocktail-1.0.4-r1` | Source build from the `1.0.4` tag, the last one upstream has made. |
 | `app-emulation/mocktail-9999` | Live ebuild, follows `main` via `git-r3`. |
 | `app-emulation/mocktail-bin-1.0.4` | Prebuilt binary from the upstream release (linked on Arch), installed into `/opt/mocktail`. Fallback. |
 
 `mocktail` and `mocktail-bin` block each other: install one or the other.
 
-The releases are `amd64` only: the runtime loads Android shared objects of the host's own
-architecture, and up to `1.0.4` upstream built for x86-64 alone. Upstream `main` has since
-gained `arm64` support (it then runs the Android `arm64-v8a` client), so `mocktail-9999`
-builds there too, but no release carries it yet and this overlay has not tested it — the
-`1.0.4` ebuilds stay `-* ~amd64`.
+The packages are keyworded for `amd64` only: the runtime loads Android shared objects of the
+host's own architecture, and up to `1.0.4` upstream built for x86-64 alone. Upstream `main`
+has since gained `arm64` support (it then runs the Android `arm64-v8a` client), so the
+`1.0.4_p20260930` snapshot and `mocktail-9999` build there too, but this overlay has not
+tested it: the snapshot is plain `~amd64`, while the `1.0.4` ebuilds stay `-* ~amd64`.
 
 ## Installing the overlay
 
