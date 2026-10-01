@@ -15,9 +15,9 @@ third-party mirror on first launch.
 
 | Package | What it is |
 |---|---|
-| `app-emulation/mocktail-1.0.4_p20260930` | Source build from upstream `main` at `b37497d`, for the fixes made after `1.0.4` (Roblox 2.738 support, crash, text rendering and input fixes). This is the one you want. |
+| `app-emulation/mocktail-1.0.4_p20261001` | Source build from upstream `main` at `77fce18`, for the fixes made after `1.0.4` (Roblox 2.738 support, crash, text rendering, input and voice chat fixes). This is the one you want. |
 | `app-emulation/mocktail-1.0.4-r1` | Source build from the `1.0.4` tag, the last one upstream has made. |
-| `app-emulation/mocktail-9999` | Live ebuild, follows `main` via `git-r3`. |
+| `app-emulation/mocktail-9999` | Live ebuild, follows `main` via `git-r3`, or upstream's experimental `vr` branch with `USE=vr` (see [VR](#vr)). |
 | `app-emulation/mocktail-bin-1.0.4` | Prebuilt binary from the upstream release (linked on Arch), installed into `/opt/mocktail`. Fallback. |
 
 `mocktail` and `mocktail-bin` block each other: install one or the other.
@@ -25,7 +25,7 @@ third-party mirror on first launch.
 The packages are keyworded for `amd64` only: the runtime loads Android shared objects of the
 host's own architecture, and up to `1.0.4` upstream built for x86-64 alone. Upstream `main`
 has since gained `arm64` support (it then runs the Android `arm64-v8a` client), so the
-`1.0.4_p20260930` snapshot and `mocktail-9999` build there too, but this overlay has not
+`1.0.4_p20261001` snapshot and `mocktail-9999` build there too, but this overlay has not
 tested it: the snapshot is plain `~amd64`, while the `1.0.4` ebuilds stay `-* ~amd64`.
 
 ## Installing the overlay
@@ -116,9 +116,34 @@ emerge -av app-emulation/mocktail
 
 Be warned: it pulls in `net-libs/webkit-gtk:6`, which is a long build.
 
+## VR
+
+Upstream develops VR support on a separate `vr` branch, not on `main`, so only the live
+ebuild offers it: `USE=vr` on `app-emulation/mocktail-9999` makes `git-r3` check out `vr`
+instead of `main`. That branch forked from `main` before the arm64 port and lags behind it,
+so it is `amd64` only and misses some of the fixes the snapshot has.
+
+The ebuild links it against the system OpenXR loader, `media-libs/openxr-loader`, instead of
+building the `third_party/OpenXR-SDK` submodule. That package lives in
+[GURU](https://wiki.gentoo.org/wiki/Project:GURU), not in `::gentoo`, so GURU has to be
+enabled:
+
+```
+# /etc/portage/package.accept_keywords/mocktail
+=app-emulation/mocktail-9999 **
+media-libs/openxr-loader ~amd64
+
+# /etc/portage/package.use/mocktail
+app-emulation/mocktail vr
+```
+
+A VR build starts in VR by default. Start WiVRn, or SteamVR with ALVR, and connect the
+headset before launching `mocktail`; pass `--no-vr` to play on the desktop.
+
 ## How the ebuilds diverge from upstream
 
-Two changes, both as versioned patches in `files/`, neither as an inline `sed`:
+Two changes, both as versioned patches in `files/`, neither as an inline `sed`, plus a third
+for `USE=vr`:
 
 - **`mocktail-system-vulkan-headers.patch`** — `third_party/Vulkan-Headers` is a git submodule
   and comes up empty in the tarball. The `add_subdirectory()` is replaced with
@@ -132,6 +157,10 @@ Two changes, both as versioned patches in `files/`, neither as an inline `sed`:
   startup dies on a missing `rbx_bin/libroblox.so`. The patch routes both lookups
   through the `MOCKTAIL_INSTALL_LIBDIR` macro that upstream already derives from
   `CMAKE_INSTALL_LIBDIR` and uses in two other translation units.
+- **`mocktail-vr-system-openxr.patch`** (`USE=vr` only) — the `vr` branch builds its pinned
+  `third_party/OpenXR-SDK` submodule as a static loader. The patch replaces that with
+  `find_package(OpenXR CONFIG REQUIRED)`, whose `OpenXR::openxr_loader` target comes from
+  `media-libs/openxr-loader`.
 
 Beyond that, `src_configure` calls `filter-lto`. `src/compat/bionic_abi_exports.cc`
 deliberately redefines glibc's `__*_chk` functions, and without `-fno-lto -fno-builtin` GCC
