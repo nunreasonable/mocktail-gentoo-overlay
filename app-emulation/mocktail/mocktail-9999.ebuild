@@ -8,11 +8,15 @@ inherit cmake flag-o-matic git-r3 optfeature xdg
 DESCRIPTION="Compatibility runtime that runs the Android Roblox client on Linux"
 HOMEPAGE="https://github.com/komaruworld/mocktail"
 EGIT_REPO_URI="https://github.com/komaruworld/mocktail.git"
-# third_party/libjnivm is replaced by MOCKTAIL_ENABLE_UPSTREAM_JNIVM=OFF and
-# third_party/Vulkan-Headers by dev-util/vulkan-headers, so neither submodule
-# is worth cloning.  Keeping '*' means a submodule added upstream later is
-# still fetched instead of silently going missing.
-EGIT_SUBMODULES=( '*' '-third_party/libjnivm' '-third_party/Vulkan-Headers' )
+# third_party/libjnivm is replaced by MOCKTAIL_ENABLE_UPSTREAM_JNIVM=OFF,
+# third_party/Vulkan-Headers by dev-util/vulkan-headers and, on the vr branch,
+# third_party/OpenXR-SDK by media-libs/openxr-loader, so none of them is worth
+# cloning.  Keeping '*' means a submodule added upstream later is still fetched
+# instead of silently going missing.
+EGIT_SUBMODULES=(
+	'*' '-third_party/libjnivm' '-third_party/Vulkan-Headers'
+	'-third_party/OpenXR-SDK'
+)
 
 # See mocktail-1.0.4-r1.ebuild for the per-component breakdown.
 LICENSE="Apache-2.0 BSD GPL-2-with-classpath-exception MIT"
@@ -24,6 +28,11 @@ KEYWORDS=""
 # git-r3 fetches in src_unpack, which FEATURES=network-sandbox blocks unless
 # the ebuild declares itself live.
 PROPERTIES="live"
+# USE=vr builds upstream's experimental vr branch instead of main.  That
+# branch forked from main before the arm64 port and has not merged it back
+# since, so it only builds on x86-64.
+IUSE="vr"
+REQUIRED_USE="vr? ( amd64 )"
 
 # BUILD_TESTING=ON makes CMake FetchContent googletest from the network at
 # configure time, which the Portage network sandbox forbids.
@@ -34,6 +43,11 @@ RESTRICT="test"
 #                     media-libs/libglvnd provides it, already needed for EGL.
 #   pkg_check_modules libpng, linked into the libvulkan.so shim for its ETC2
 #                     decoder and texture overrides.
+#   find_package      OpenXR, with USE=vr (after our patch).  The vr branch
+#                     predates libpng, which stays unconditional regardless:
+#                     it comes back the next time vr merges main.
+# media-libs/openxr-loader is in GURU, not ::gentoo, so USE=vr needs GURU
+# enabled.
 # capstone stays on the 5 series for the runtime cs_version() check; see
 # mocktail-1.0.4-r1.ebuild.
 COMMON_DEPEND="
@@ -55,6 +69,7 @@ COMMON_DEPEND="
 	virtual/libelf:=
 	virtual/minizip:=
 	virtual/zlib:=
+	vr? ( media-libs/openxr-loader:= )
 "
 DEPEND="
 	${COMMON_DEPEND}
@@ -76,13 +91,26 @@ RDEPEND="
 "
 BDEPEND="virtual/pkgconfig"
 
-# Same two patches as 1.0.4.  If either one stops applying, upstream has
-# restructured the block it touches and the patch needs regenerating -- that is
-# expected churn for a live ebuild.
+# Same two patches as 1.0.4, on main and vr alike; USE=vr adds a third in
+# src_prepare.  If one stops applying, upstream has restructured the block it
+# touches and the patch needs regenerating -- that is expected churn for a live
+# ebuild.
 PATCHES=(
 	"${FILESDIR}"/mocktail-system-vulkan-headers.patch
 	"${FILESDIR}"/mocktail-install-libdir.patch
 )
+
+src_unpack() {
+	# git-r3 reads EGIT_BRANCH in src_unpack rather than when the ebuild is
+	# sourced, which is the only reason the branch can follow a USE flag.
+	use vr && EGIT_BRANCH="vr"
+	git-r3_src_unpack
+}
+
+src_prepare() {
+	use vr && PATCHES+=( "${FILESDIR}"/mocktail-vr-system-openxr.patch )
+	cmake_src_prepare
+}
 
 src_configure() {
 	# Upstream guards only src/compat/bionic_abi_exports.cc against LTO.
@@ -104,6 +132,8 @@ src_configure() {
 		-DMOCKTAIL_DEFAULT_COMPATIBILITY_MANIFEST="${EPREFIX}/usr/share/mocktail/metadata/roblox_compatibility.json"
 		-DMOCKTAIL_DEFAULT_SIGNING_TRUST_MANIFEST="${EPREFIX}/usr/share/mocktail/metadata/roblox_signing_certificates.json"
 	)
+	# The option only exists on the vr branch, where it already defaults to ON.
+	use vr && mycmakeargs+=( -DMOCKTAIL_ENABLE_VR=ON )
 
 	# No -DCMAKE_INSTALL_LIBDIR; see mocktail-1.0.4-r1.ebuild for why.
 	cmake_src_configure
@@ -120,4 +150,12 @@ pkg_postinst() {
 	elog
 	elog "The Roblox client ABI follows the host: x86_64 on amd64, arm64-v8a"
 	elog "on arm64."
+
+	if use vr; then
+		elog
+		elog "USE=vr built upstream's experimental vr branch, which starts in VR"
+		elog "by default: start WiVRn, or SteamVR with ALVR, and connect the"
+		elog "headset before launching mocktail. Pass --no-vr to play on the"
+		elog "desktop instead. VR targets the exact Roblox build 2998."
+	fi
 }

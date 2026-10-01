@@ -22,6 +22,11 @@
 		Corporation, or VinegarHQ, and packaging problems should be reported to
 		the ebuild maintainer rather than upstream.
 	</longdescription>
+	<use>
+		<flag name="vr">Build upstream's experimental vr branch instead of main, with
+			OpenXR support linked against media-libs/openxr-loader from GURU (live
+			ebuild only)</flag>
+	</use>
 	<upstream>
 		<remote-id type="github">komaruworld/mocktail</remote-id>
 	</upstream>

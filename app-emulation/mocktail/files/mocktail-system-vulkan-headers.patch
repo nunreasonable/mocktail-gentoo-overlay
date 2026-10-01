@@ -9,11 +9,13 @@ find_package() needs no further changes.
 Upstream does the same substitution in packaging/aur/mocktail/PKGBUILD; this is
 the patched form of that sed, kept versioned so it is reviewable.
 
+The hunk carries a single line of context on purpose: upstream's vr branch
+inserts include(cmake/MocktailVR.cmake) right after this block, and three
+lines would only apply there with fuzz.
+
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -119,11 +119,7 @@
-   target_compile_options(linker PRIVATE -w)
- endif()
+@@ -121,7 +121,3 @@ endif()
  
 -set(VULKAN_HEADERS_ENABLE_TESTS OFF CACHE BOOL
 -  "Build Khronos Vulkan-Headers tests" FORCE)
@@ -22,5 +24,3 @@ the patched form of that sed, kept versioned so it is reviewable.
 -add_subdirectory(third_party/Vulkan-Headers EXCLUDE_FROM_ALL)
 +find_package(VulkanHeaders CONFIG REQUIRED)
  
- include(CTest)
- if(BUILD_TESTING)

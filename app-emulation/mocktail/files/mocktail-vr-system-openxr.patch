@@ -1,0 +1,42 @@
+Link the vr branch against the system OpenXR loader.
+
+third_party/OpenXR-SDK is a git submodule pinned to release-1.1.63, built
+in-tree as a static loader with its own bundled jsoncpp.  The live ebuild
+does not clone it: media-libs/openxr-loader installs OpenXRConfig.cmake,
+whose OpenXR::openxr_loader target carries OpenXR::headers along with it,
+which is all mocktail_vr links against.  The vr code only needs the
+XR_KHR_opengl_es_enable, XR_KHR_vulkan_enable2 and XR_MNDX_egl_enable
+extensions, which every loader version GURU carries already defines.
+
+Only for USE=vr: cmake/MocktailVR.cmake does not exist on main.
+
+--- a/cmake/MocktailVR.cmake
++++ b/cmake/MocktailVR.cmake
+@@ -27,26 +27,7 @@ if(MOCKTAIL_ENABLE_VR)
+   if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+     message(FATAL_ERROR "Mocktail OpenXR support currently targets Linux")
+   endif()
+-  if(NOT EXISTS "${CMAKE_SOURCE_DIR}/third_party/OpenXR-SDK/CMakeLists.txt")
+-    message(FATAL_ERROR
+-      "Initialize OpenXR: git submodule update --init third_party/OpenXR-SDK")
+-  endif()
+-
+-  # Scope upstream's generic option names to this dependency. Static linking
+-  # packages the pinned loader without requiring a matching system loader.
+-  function(mocktail_add_openxr_sdk)
+-    set(BUILD_LOADER ON)
+-    set(DYNAMIC_LOADER OFF)
+-    set(BUILD_WITH_SYSTEM_JSONCPP OFF)
+-    set(BUILD_TESTS OFF)
+-    set(BUILD_API_LAYERS OFF)
+-    set(BUILD_CONFORMANCE_TESTS OFF)
+-    set(BUILD_SDK_TESTS OFF)
+-    set(BUILD_FORCE_GENERATION OFF)
+-    add_subdirectory("${CMAKE_SOURCE_DIR}/third_party/OpenXR-SDK"
+-      "${CMAKE_BINARY_DIR}/third_party/OpenXR-SDK" EXCLUDE_FROM_ALL)
+-  endfunction()
+-  mocktail_add_openxr_sdk()
++  find_package(OpenXR CONFIG REQUIRED)
+   target_sources(mocktail_vr PRIVATE src/vr/openxr_probe.cc src/vr/openxr_preview.cc
+     src/vr/openxr_backend.cc src/vr/gles_transport.cc src/vr/xr_actions.cc)
+   # Error unwinding is confined to these native session implementations; their
