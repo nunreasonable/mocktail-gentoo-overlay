@@ -7,10 +7,11 @@ inherit cmake flag-o-matic optfeature xdg
 
 # Upstream has not tagged anything after 1.0.4, but main has since picked up
 # support for Roblox 2.738 and a string of runtime fixes (SIGXCPU crashes, x86
-# host crashes, chat and text overlay rendering, input).  This is main as of
-# "fix text overlay again (#179)", the commit upstream's CI built into the
-# continuous release on the same day.
-MOCKTAIL_COMMIT="b37497db7bd2458a8fd33221ce83b0bc61501172"
+# host crashes, chat and text overlay rendering, input, voice chat start-up,
+# joining a friend's game from the website).  This is main as of "po co
+# chodzic, mozna latac (#183)", which upstream's CI built into the continuous
+# release on the same day.
+MOCKTAIL_COMMIT="77fce18a951a3ac03413a1438bf90df0fdf15e69"
 
 DESCRIPTION="Compatibility runtime that runs the Android Roblox client on Linux"
 HOMEPAGE="https://github.com/komaruworld/mocktail"
