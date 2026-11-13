@@ -8,17 +8,12 @@ inherit unpacker xdg
 DESCRIPTION="Runs the Android x86-64 Roblox client on Linux (prebuilt binaries)"
 HOMEPAGE="https://github.com/komaruworld/mocktail"
 # There is no workflow in the tree that names the tagged release assets, and
-# upstream does not name them consistently: the 1.0.3 asset carried the Arch
-# package release (mocktail-1.0.3-2-x86_64.pkg.tar.zst) and this one does not.
-# Check the actual asset name on every bump instead of deriving it.
-SRC_URI="https://github.com/komaruworld/mocktail/releases/download/${PV}/mocktail-${PV}-x86_64.pkg.tar.zst"
+# upstream does not name them consistently: the 1.0.3 and 1.0.5 assets carry
+# the Arch package release (mocktail-1.0.5-1-x86_64.pkg.tar.zst), the 1.0.4
+# one did not.  Check the actual asset name on every bump instead of deriving
+# it.
+SRC_URI="https://github.com/komaruworld/mocktail/releases/download/${PV}/mocktail-${PV}-1-x86_64.pkg.tar.zst"
 S="${WORKDIR}"
-
-# The archive's own .PKGINFO still says pkgver=1.0.3-2 and the binaries report
-# 1.0.3, because upstream never bumped packaging/arch/PKGBUILD or
-# project(Mocktail VERSION ...) at the 1.0.4 tag.  It really is the 1.0.4 build:
-# it was produced on 2026-09-11 from that tree and ships the Roblox 2.736.1408
-# compatibility profile that 1.0.3 does not have.
 
 # See app-emulation/mocktail for the per-component breakdown.
 LICENSE="Apache-2.0 BSD GPL-2-with-classpath-exception MIT"
@@ -36,12 +31,14 @@ QA_PREBUILT="opt/mocktail/*"
 #   libcapstone.so.5           dev-libs/capstone:0/5
 #   libcrypto.so.3             dev-libs/openssl:0/3
 #   libplacebo.so.360          media-libs/libplacebo:0/360
+#   libpng16.so.16             media-libs/libpng:0/16
 #   libwebkitgtk-6.0.so.4      net-libs/webkit-gtk:6/0
 #   libjavascriptcoregtk-6.0.so.1
 # libutf8proc is deliberately unpinned: its Gentoo subslot is the full version
 # (0/2.11.3) while the soname is only libutf8proc.so.3, so pinning would break
 # the package on harmless point releases.
 RDEPEND="
+	app-crypt/libsecret
 	dev-libs/capstone:0/5
 	dev-libs/glib:2
 	dev-libs/libutf8proc
@@ -51,6 +48,7 @@ RDEPEND="
 	gui-libs/libadwaita:1
 	media-libs/fontconfig
 	media-libs/libplacebo:0/360
+	media-libs/libpng:0/16
 	media-libs/libsdl3
 	media-libs/sdl3-ttf
 	net-libs/libsoup:3.0
@@ -94,6 +92,13 @@ src_install() {
 	insinto /usr/share
 	doins -r usr/share/applications usr/share/icons usr/share/metainfo \
 		usr/share/mocktail
+
+	# The prefix is relative to the executable too, though:
+	# src/runtime/supported_launch_policy.cc exports the helper, runtime
+	# library and manifest paths only when <prefix>/share/mocktail/metadata
+	# exists.  Without it nothing is exported, and the Android adapters in
+	# lib/mocktail are looked up next to /opt/mocktail/bin/mocktail instead.
+	dosym -r /usr/share/mocktail /opt/mocktail/share/mocktail
 }
 
 pkg_postinst() {
@@ -106,4 +111,9 @@ pkg_postinst() {
 	elog "The Roblox client APK is not distributed with Mocktail and is not"
 	elog "part of this package. It is downloaded from a third-party mirror the"
 	elog "first time you launch mocktail."
+	elog
+	elog "The Roblox session cookie is kept in a private plaintext file unless"
+	elog "auth.use_libsecret is set in the Mocktail config (or"
+	elog "MOCKTAIL_USE_LIBSECRET=1), which stores it in the Secret Service"
+	elog "keyring instead."
 }
