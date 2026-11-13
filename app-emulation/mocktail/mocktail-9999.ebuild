@@ -18,7 +18,7 @@ EGIT_SUBMODULES=(
 	'-third_party/OpenXR-SDK'
 )
 
-# See mocktail-1.0.4-r1.ebuild for the per-component breakdown.
+# See mocktail-1.0.5.ebuild for the per-component breakdown.
 LICENSE="Apache-2.0 BSD GPL-2-with-classpath-exception MIT"
 SLOT="0"
 # main also builds on arm64 since upstream #152, against the Android arm64-v8a
@@ -28,29 +28,19 @@ KEYWORDS=""
 # git-r3 fetches in src_unpack, which FEATURES=network-sandbox blocks unless
 # the ebuild declares itself live.
 PROPERTIES="live"
-# USE=vr builds upstream's experimental vr branch instead of main.  That
-# branch forked from main before the arm64 port and has not merged it back
-# since, so it only builds on x86-64.
+# USE=vr builds upstream's experimental vr branch instead of main.
 IUSE="vr"
-REQUIRED_USE="vr? ( amd64 )"
 
 # BUILD_TESTING=ON makes CMake FetchContent googletest from the network at
 # configure time, which the Portage network sandbox forbids.
 RESTRICT="test"
 
-# Same probe list as 1.0.4, plus what upstream added after the tag:
-#   find_path         GLES3/gl3.h, for the new GLES text overlay compositor;
-#                     media-libs/libglvnd provides it, already needed for EGL.
-#   pkg_check_modules libpng, linked into the libvulkan.so shim for its ETC2
-#                     decoder and texture overrides.
-#   find_package      OpenXR, with USE=vr (after our patch).  The vr branch
-#                     predates libpng, which stays unconditional regardless:
-#                     it comes back the next time vr merges main.
-# media-libs/openxr-loader is in GURU, not ::gentoo, so USE=vr needs GURU
-# enabled.
-# capstone stays on the 5 series for the runtime cs_version() check; see
-# mocktail-1.0.4-r1.ebuild.
+# Same probe list as 1.0.5, plus find_package(OpenXR) with USE=vr (after our
+# patch).  media-libs/openxr-loader is in GURU, not ::gentoo, so USE=vr needs
+# GURU enabled.  libsecret and the capstone 5 pin are explained in
+# mocktail-1.0.5.ebuild.
 COMMON_DEPEND="
+	app-crypt/libsecret
 	=dev-libs/capstone-5*:=
 	dev-libs/glib:2
 	dev-libs/libutf8proc:=
@@ -91,13 +81,12 @@ RDEPEND="
 "
 BDEPEND="virtual/pkgconfig"
 
-# Same two patches as 1.0.4, on main and vr alike; USE=vr adds a third in
+# Same patch as 1.0.5, on main and vr alike; USE=vr adds a second in
 # src_prepare.  If one stops applying, upstream has restructured the block it
 # touches and the patch needs regenerating -- that is expected churn for a live
 # ebuild.
 PATCHES=(
 	"${FILESDIR}"/mocktail-system-vulkan-headers.patch
-	"${FILESDIR}"/mocktail-install-libdir.patch
 )
 
 src_unpack() {
@@ -135,7 +124,7 @@ src_configure() {
 	# The option only exists on the vr branch, where it already defaults to ON.
 	use vr && mycmakeargs+=( -DMOCKTAIL_ENABLE_VR=ON )
 
-	# No -DCMAKE_INSTALL_LIBDIR; see mocktail-1.0.4-r1.ebuild for why.
+	# No -DCMAKE_INSTALL_LIBDIR; see mocktail-1.0.5.ebuild for why.
 	cmake_src_configure
 }
 
@@ -150,6 +139,11 @@ pkg_postinst() {
 	elog
 	elog "The Roblox client ABI follows the host: x86_64 on amd64, arm64-v8a"
 	elog "on arm64."
+	elog
+	elog "The Roblox session cookie is kept in a private plaintext file unless"
+	elog "auth.use_libsecret is set in the Mocktail config (or"
+	elog "MOCKTAIL_USE_LIBSECRET=1), which stores it in the Secret Service"
+	elog "keyring instead."
 
 	if use vr; then
 		elog

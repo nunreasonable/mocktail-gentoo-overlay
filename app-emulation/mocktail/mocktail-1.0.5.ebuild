@@ -5,12 +5,13 @@ EAPI=8
 
 inherit cmake flag-o-matic optfeature xdg
 
-DESCRIPTION="Compatibility runtime that runs the Android x86-64 Roblox client on Linux"
+DESCRIPTION="Compatibility runtime that runs the Android Roblox client on Linux"
 HOMEPAGE="https://github.com/komaruworld/mocktail"
 SRC_URI="https://github.com/komaruworld/mocktail/archive/refs/tags/${PV}.tar.gz
 	-> ${P}.tar.gz"
 
-# Apache-2.0  the project itself, and the AOSP code vendored under
+# Apache-2.0  the project itself, the code taken from CoderDayton/nightcap, and
+#             the AOSP code vendored under
 #             third_party/mcpelauncher-linker/{bionic,core}.
 # BSD         third_party/angle_headers, plus the ARM/Linaro string routines
 #             carried by third_party/mcpelauncher-linker/bionic.
@@ -19,9 +20,10 @@ SRC_URI="https://github.com/komaruworld/mocktail/archive/refs/tags/${PV}.tar.gz
 # MIT         third_party/mcpelauncher-linker itself.
 LICENSE="Apache-2.0 BSD GPL-2-with-classpath-exception MIT"
 SLOT="0"
-# Upstream builds for Linux x86-64 only, and the runtime exists to load Android
-# x86-64 shared objects, so there is nothing to keyword on any other arch.
-KEYWORDS="-* ~amd64"
+# 1.0.5 also builds on arm64, against the Android arm64-v8a client, but it has
+# not been built or run there through this overlay, so it gets no keyword.  No
+# -* either: unlike 1.0.4, nothing in this tree is x86-64 only any more.
+KEYWORDS="~amd64"
 
 # The test suite only exists with BUILD_TESTING=ON, which makes CMake
 # FetchContent googletest from the network at configure time.  That is
@@ -32,10 +34,14 @@ RESTRICT="test"
 #   find_package      CURL, OpenSSL, SDL3 3.4, SDL3_ttf, nlohmann_json,
 #                     VulkanHeaders (after our patch)
 #   pkg_check_modules yaml-0.1, minizip (virtual/minizip), capstone, gio-2.0,
-#                     gtk4, libadwaita-1>=1.6, webkitgtk-6.0, libelf,
-#                     libutf8proc, fontconfig, libplacebo
-#   find_path         EGL/egl.h
-# gio-2.0 is new in 1.0.4, for src/runtime/system_proxy.cc.
+#                     libsecret-1, gtk4, libadwaita-1>=1.6, webkitgtk-6.0,
+#                     libelf, libutf8proc, fontconfig, libplacebo, libpng
+#   find_path         EGL/egl.h, GLES3/gl3.h, both from media-libs/libglvnd
+#
+# libsecret-1 is probed QUIET, for mocktail_cookie_helper.  CMake has no
+# switch for it, so it is a plain dependency rather than an automagic one, as
+# in upstream's own PKGBUILD.  Whether the keyring is used at all is a runtime
+# setting; see pkg_postinst.
 #
 # capstone is pinned to the 5 series.  The pkg-config probe takes any version,
 # but src/update/host_abi_deriver.cc refuses to open the disassembler unless
@@ -44,6 +50,7 @@ RESTRICT="test"
 # alphas the package compiles and starts, then fails the first time Roblox
 # updates.
 COMMON_DEPEND="
+	app-crypt/libsecret
 	=dev-libs/capstone-5*:=
 	dev-libs/glib:2
 	dev-libs/libutf8proc:=
@@ -54,6 +61,7 @@ COMMON_DEPEND="
 	media-libs/fontconfig
 	media-libs/libglvnd
 	media-libs/libplacebo:=
+	media-libs/libpng:=
 	>=media-libs/libsdl3-3.4[vulkan]
 	media-libs/sdl3-ttf
 	net-libs/webkit-gtk:6=
@@ -88,16 +96,13 @@ BDEPEND="virtual/pkgconfig"
 
 PATCHES=(
 	"${FILESDIR}"/mocktail-system-vulkan-headers.patch
-	"${FILESDIR}"/mocktail-install-libdir.patch
 )
 
 src_configure() {
-	# Upstream guards only src/compat/bionic_abi_exports.cc against LTO and
-	# builtin folding -- the -fno-lto/-fno-builtin block 1.0.3 needed as a
-	# backport is in the tree as of this tag.  bionic_stdio_runtime.cc,
-	# libc_shim.cc and the vendored bionic linker interpose glibc symbols in
-	# exactly the same way and are not guarded, so the filter stays.  A no-op
-	# when LTO is not in CFLAGS to begin with.
+	# Upstream guards only src/compat/bionic_abi_exports.cc against LTO.
+	# bionic_stdio_runtime.cc, libc_shim.cc and the vendored bionic linker
+	# interpose glibc symbols in exactly the same way and are not guarded, so
+	# the filter stays.  A no-op when LTO is not in CFLAGS to begin with.
 	#
 	# _FORTIFY_SOURCE is deliberately left alone: upstream ships this exact
 	# source to Arch with FORTIFY enabled, and its own guard already covers the
@@ -110,10 +115,10 @@ src_configure() {
 		# and fail.
 		-DMOCKTAIL_ENABLE_UPSTREAM_JNIVM=OFF
 
-		# Defaults to ON, and then hard-requires ld.lld and elfedit purely to
-		# assemble a static helper for FreeBSD's Linuxulator.  Nothing on a
-		# Linux host ever executes it, so switching it off drops the entire
-		# llvm-core/lld build dependency.
+		# Defaults to ON on x86-64, and then hard-requires ld.lld and elfedit
+		# purely to assemble a static helper for FreeBSD's Linuxulator.
+		# Nothing on a Linux host ever executes it, so switching it off drops
+		# the entire llvm-core/lld build dependency.
 		-DMOCKTAIL_BUILD_FREEBSD_SOCKET_HELPER=OFF
 
 		# ON makes CMake FetchContent googletest over the network.  See
@@ -128,11 +133,10 @@ src_configure() {
 	# Deliberately no -DCMAKE_INSTALL_LIBDIR here.  Upstream's PKGBUILD forces
 	# "lib" because Arch has no lib64, but FEATURES=multilib-strict rejects
 	# 64-bit ELF under /usr/lib.  cmake.eclass already passes $(get_libdir),
-	# and both the executable's INSTALL_RPATH and the compiled-in
-	# MOCKTAIL_INSTALL_LIBDIR derive from that same variable, so they stay
-	# consistent with wherever the libraries actually land.  Two lookups
-	# spelled that libdir as a literal "lib" and needed the install-libdir
-	# patch above before this held.
+	# and the executable's INSTALL_RPATH and every helper lookup derive from
+	# that same variable.  Up to 1.0.4 two lookups spelled it as a literal
+	# "lib" and needed a patch; 1.0.5 routes them through
+	# MOCKTAIL_INSTALL_LIBDIR itself.
 	cmake_src_configure
 }
 
@@ -147,5 +151,8 @@ pkg_postinst() {
 	elog "part of this package. It is downloaded from a third-party mirror the"
 	elog "first time you launch mocktail."
 	elog
-	elog "Only the Android x86-64 Roblox client is supported."
+	elog "The Roblox session cookie is kept in a private plaintext file unless"
+	elog "auth.use_libsecret is set in the Mocktail config (or"
+	elog "MOCKTAIL_USE_LIBSECRET=1), which stores it in the Secret Service"
+	elog "keyring instead."
 }
