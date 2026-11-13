@@ -2,7 +2,7 @@
 
 Third-party, **unofficial** Portage overlay with ebuilds for
 [Mocktail](https://github.com/komaruworld/mocktail), the compatibility runtime that runs the
-Android x86-64 Roblox client on Linux.
+Android Roblox client on Linux.
 
 This overlay is not affiliated with or endorsed by the Mocktail project, the Roblox
 Corporation or VinegarHQ. I maintain **the ebuilds**, not the software. A packaging problem
@@ -15,18 +15,16 @@ third-party mirror on first launch.
 
 | Package | What it is |
 |---|---|
-| `app-emulation/mocktail-1.0.4_p20261001` | Source build from upstream `main` at `77fce18`, for the fixes made after `1.0.4` (Roblox 2.738 support, crash, text rendering, input and voice chat fixes). This is the one you want. |
-| `app-emulation/mocktail-1.0.4-r1` | Source build from the `1.0.4` tag, the last one upstream has made. |
+| `app-emulation/mocktail-1.0.5` | Source build from the `1.0.5` tag. This is the one you want. |
 | `app-emulation/mocktail-9999` | Live ebuild, follows `main` via `git-r3`, or upstream's experimental `vr` branch with `USE=vr` (see [VR](#vr)). |
-| `app-emulation/mocktail-bin-1.0.4` | Prebuilt binary from the upstream release (linked on Arch), installed into `/opt/mocktail`. Fallback. |
+| `app-emulation/mocktail-bin-1.0.5` | Prebuilt binary from the upstream release (linked on Arch), installed into `/opt/mocktail`. Fallback. |
 
 `mocktail` and `mocktail-bin` block each other: install one or the other.
 
-The packages are keyworded for `amd64` only: the runtime loads Android shared objects of the
-host's own architecture, and up to `1.0.4` upstream built for x86-64 alone. Upstream `main`
-has since gained `arm64` support (it then runs the Android `arm64-v8a` client), so the
-`1.0.4_p20261001` snapshot and `mocktail-9999` build there too, but this overlay has not
-tested it: the snapshot is plain `~amd64`, while the `1.0.4` ebuilds stay `-* ~amd64`.
+The packages are keyworded for `amd64` only. The runtime loads Android shared objects of the
+host's own architecture, and since `1.0.5` upstream also builds for `arm64` (it then runs the
+Android `arm64-v8a` client), but this overlay has not tested it: `mocktail` is plain `~amd64`.
+`mocktail-bin` is `-* ~amd64`, since the upstream package it repackages is x86-64.
 
 ## Installing the overlay
 
@@ -120,8 +118,8 @@ Be warned: it pulls in `net-libs/webkit-gtk:6`, which is a long build.
 
 Upstream develops VR support on a separate `vr` branch, not on `main`, so only the live
 ebuild offers it: `USE=vr` on `app-emulation/mocktail-9999` makes `git-r3` check out `vr`
-instead of `main`. That branch forked from `main` before the arm64 port and lags behind it,
-so it is `amd64` only and misses some of the fixes the snapshot has.
+instead of `main`. That branch last merged `main` on 2026-11-09, after `1.0.5`, and can fall
+behind it between merges.
 
 The ebuild links it against the system OpenXR loader, `media-libs/openxr-loader`, instead of
 building the `third_party/OpenXR-SDK` submodule. That package lives in
@@ -142,21 +140,13 @@ headset before launching `mocktail`; pass `--no-vr` to play on the desktop.
 
 ## How the ebuilds diverge from upstream
 
-Two changes, both as versioned patches in `files/`, neither as an inline `sed`, plus a third
-for `USE=vr`:
+One change as a versioned patch in `files/`, not as an inline `sed`, plus a second for
+`USE=vr`:
 
 - **`mocktail-system-vulkan-headers.patch`** — `third_party/Vulkan-Headers` is a git submodule
   and comes up empty in the tarball. The `add_subdirectory()` is replaced with
   `find_package(VulkanHeaders CONFIG REQUIRED)`, using `dev-util/vulkan-headers`, which exports
   the same `Vulkan::Headers` target.
-- **`mocktail-install-libdir.patch`** — two of the runtime's helper lookups spell
-  the install libdir as a literal `lib`. On Gentoo the helpers land in `lib64`, so
-  `mocktail_updater` is never found: the launch policy exports
-  `MOCKTAIL_UPDATE_HELPER` pointing at a path that does not exist, that value then
-  wins over the fallback search, the payload update preflight is skipped, and
-  startup dies on a missing `rbx_bin/libroblox.so`. The patch routes both lookups
-  through the `MOCKTAIL_INSTALL_LIBDIR` macro that upstream already derives from
-  `CMAKE_INSTALL_LIBDIR` and uses in two other translation units.
 - **`mocktail-vr-system-openxr.patch`** (`USE=vr` only) — the `vr` branch builds its pinned
   `third_party/OpenXR-SDK` submodule as a static loader. The patch replaces that with
   `find_package(OpenXR CONFIG REQUIRED)`, whose `OpenXR::openxr_loader` target comes from
